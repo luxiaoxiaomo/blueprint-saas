@@ -1,0 +1,7 @@
+{
+  "name": "蓝图最新",
+  "description": "智能系统架构分析与文档工具，通过 AI 自动分析文件并支持手动编辑功能模块、实体及其关联关系。",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

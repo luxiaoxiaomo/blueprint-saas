@@ -1,0 +1,45 @@
+{
+  "name": "blueprint-saas-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run build && node dist/index.js",
+    "dev:watch": "nodemon --watch src --ext ts --exec \"npm run build && node dist/index.js\"",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:isolation": "node tests/run-isolation-tests.js",
+    "test:isolation:db": "vitest run tests/integration/test-data-isolation.js",
+    "test:isolation:api": "vitest run tests/integration/test-api-isolation.js",
+    "test:property": "vitest run --include '**/*.property.test.ts' --include '**/*.property.test.js'",
+    "test:permissions": "vitest run src/ontology/__tests__/permissions.property.test.ts",
+    "test:subscription": "vitest run src/services/__tests__/subscription.property.test.ts",
+    "test:all": "npm run test && npm run test:property"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
+    "redis": "^4.6.12",
+    "fast-check": "^3.15.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.10.5",
+    "@types/pg": "^8.16.0",
+    "@vitest/ui": "^4.0.17",
+    "nodemon": "^3.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vitest": "^4.0.17"
+  }
+}
