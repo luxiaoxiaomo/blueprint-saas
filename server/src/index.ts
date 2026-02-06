@@ -59,10 +59,18 @@ app.get('/api/health', (req, res) => {
 // 启动服务器
 async function startServer() {
   try {
+    console.log('🔧 正在启动服务器...');
+    console.log(`📝 环境变量检查:`);
+    console.log(`   - NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`   - PORT: ${process.env.PORT}`);
+    console.log(`   - DB_HOST: ${process.env.DB_HOST ? '已设置' : '未设置'}`);
+    console.log(`   - CORS_ORIGIN: ${corsOrigin}`);
+    
     // 先启动服务器，数据库初始化失败不影响启动
-    app.listen(PORT, () => {
-      console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ 服务器成功启动在 0.0.0.0:${PORT}`);
       console.log(`📊 环境: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔐 CORS 已启用，允许来自: ${corsOrigin}`);
     });
     
     // 异步初始化数据库
