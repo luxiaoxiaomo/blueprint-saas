@@ -52,21 +52,23 @@ app.get('/api/health', (req, res) => {
 // 启动服务器
 async function startServer() {
   try {
-    await initDatabase();
-    
-    // Redis 是可选的，连接失败不影响启动
-    try {
-      await initRedis();
-    } catch (error) {
-      console.warn('⚠️  Redis 连接失败，系统将在没有缓存的情况下运行');
-    }
-    
+    // 先启动服务器，数据库初始化失败不影响启动
     app.listen(PORT, () => {
       console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
       console.log(`📊 环境: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`✅ 本体论架构已集成`);
-      console.log(`✅ 企业级 SaaS 升级 - 第一阶段启动`);
     });
+    
+    // 异步初始化数据库
+    initDatabase().catch(err => {
+      console.error('❌ 数据库初始化失败:', err);
+      console.warn('⚠️  服务器将继续运行，但数据库功能可能不可用');
+    });
+    
+    // Redis 是可选的
+    initRedis().catch(err => {
+      console.warn('⚠️  Redis 连接失败，系统将在没有缓存的情况下运行');
+    });
+    
   } catch (error) {
     console.error('❌ 服务器启动失败:', error);
     process.exit(1);
