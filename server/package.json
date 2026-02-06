@@ -6,7 +6,7 @@
     "dev": "npm run build && node dist/index.js",
     "dev:watch": "nodemon --watch src --ext ts --exec \"npm run build && node dist/index.js\"",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/index-simple.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
