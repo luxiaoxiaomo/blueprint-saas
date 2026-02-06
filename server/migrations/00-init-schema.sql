@@ -1,5 +1,15 @@
 -- 初始化数据库架构
 
+-- 0. 创建 users 表
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  name VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 1. 创建 organizations 表
 CREATE TABLE IF NOT EXISTS organizations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -8,6 +18,17 @@ CREATE TABLE IF NOT EXISTS organizations (
   description TEXT,
   owner_id UUID,
   plan VARCHAR(50) DEFAULT 'free',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 1.5. 创建 projects 表
+CREATE TABLE IF NOT EXISTS projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+  is_archived BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -36,11 +57,7 @@ CREATE TABLE IF NOT EXISTS departments (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. 更新 projects 表
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE;
-ALTER TABLE projects ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE;
-
--- 5. 创建 modules 表
+-- 4. 创建 modules 表
 CREATE TABLE IF NOT EXISTS modules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -52,7 +69,7 @@ CREATE TABLE IF NOT EXISTS modules (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. 创建 entities 表
+-- 5. 创建 entities 表
 CREATE TABLE IF NOT EXISTS entities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -64,7 +81,7 @@ CREATE TABLE IF NOT EXISTS entities (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 7. 创建 functional_points 表
+-- 6. 创建 functional_points 表
 CREATE TABLE IF NOT EXISTS functional_points (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
@@ -78,7 +95,7 @@ CREATE TABLE IF NOT EXISTS functional_points (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 8. 创建 links 表
+-- 7. 创建 links 表
 CREATE TABLE IF NOT EXISTS links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   source_id UUID NOT NULL,
@@ -91,7 +108,32 @@ CREATE TABLE IF NOT EXISTS links (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 9. 创建 permission_overrides 表
+-- 8. 创建 tasks 表
+CREATE TABLE IF NOT EXISTS tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  status VARCHAR(50) DEFAULT 'open',
+  priority VARCHAR(50) DEFAULT 'medium',
+  assigned_to UUID,
+  created_by UUID,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. 创建 audit_logs 表
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID,
+  action VARCHAR(255) NOT NULL,
+  resource_type VARCHAR(100),
+  resource_id UUID,
+  changes JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 10. 创建 permission_overrides 表
 CREATE TABLE IF NOT EXISTS permission_overrides (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -102,7 +144,7 @@ CREATE TABLE IF NOT EXISTS permission_overrides (
   UNIQUE(project_id, member_id)
 );
 
--- 10. 创建 subscriptions 表
+-- 11. 创建 subscriptions 表
 CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -115,7 +157,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   UNIQUE(organization_id)
 );
 
--- 11. 创建 quotas 表
+-- 12. 创建 quotas 表
 CREATE TABLE IF NOT EXISTS quotas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -130,7 +172,8 @@ CREATE TABLE IF NOT EXISTS quotas (
   UNIQUE(organization_id)
 );
 
--- 12. 创建索引
+-- 13. 创建索引
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_organizations_owner ON organizations(owner_id);
 CREATE INDEX IF NOT EXISTS idx_members_organization ON members(organization_id);
 CREATE INDEX IF NOT EXISTS idx_members_user ON members(user_id);
@@ -146,6 +189,8 @@ CREATE INDEX IF NOT EXISTS idx_entities_module ON entities(module_id);
 CREATE INDEX IF NOT EXISTS idx_functional_points_module ON functional_points(module_id);
 CREATE INDEX IF NOT EXISTS idx_links_source ON links(source_id, source_type);
 CREATE INDEX IF NOT EXISTS idx_links_target ON links(target_id, target_type);
+CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_permission_overrides_project ON permission_overrides(project_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_organization ON subscriptions(organization_id);
 CREATE INDEX IF NOT EXISTS idx_quotas_organization ON quotas(organization_id);
