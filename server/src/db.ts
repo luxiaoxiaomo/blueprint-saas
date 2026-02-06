@@ -13,41 +13,22 @@ export const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
-// 初始化数据库表
+// 测试数据库连接
 export async function initDatabase() {
-  const client = await pool.connect();
   try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS projects (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        model JSONB DEFAULT '{}',
-        is_archived BOOLEAN DEFAULT false,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE TABLE IF NOT EXISTS modules (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        functional_points JSONB DEFAULT '[]',
-        children JSONB,
-        sort_order INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    const client = await pool.connect();
+    console.log('✅ 数据库连接成功');
+    
+    // 测试查询
+    const result = await client.query('SELECT NOW()');
+    console.log('✅ 数据库查询测试成功:', result.rows[0].now);
+    
+    client.release();
+  } catch (error) {
+    console.error('❌ 数据库连接失败:', error);
+    throw error;
+  }
+}
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
