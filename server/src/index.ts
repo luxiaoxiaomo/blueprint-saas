@@ -44,11 +44,22 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// API 健康检查（Railway 可能会检查这个）
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // 启动服务器
 async function startServer() {
   try {
     await initDatabase();
-    await initRedis();
+    
+    // Redis 是可选的，连接失败不影响启动
+    try {
+      await initRedis();
+    } catch (error) {
+      console.warn('⚠️  Redis 连接失败，系统将在没有缓存的情况下运行');
+    }
     
     app.listen(PORT, () => {
       console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
