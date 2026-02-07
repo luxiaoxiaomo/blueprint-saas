@@ -12,7 +12,10 @@ class ApiService {
   async request(endpoint: string, options: RequestInit = {}) {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers: this.getHeaders()
+      headers: {
+        ...this.getHeaders(),
+        ...(options.headers || {})
+      }
     });
 
     if (!response.ok) {
