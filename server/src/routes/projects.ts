@@ -48,7 +48,8 @@ const ontologyService = new OntologyService(
   memberRepo
 );
 
-// 应用租户中间件到所有路由
+// 应用认证和租户中间件到所有路由
+router.use(authenticateToken);
 router.use(tenantMiddleware);
 
 /**
