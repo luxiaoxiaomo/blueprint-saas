@@ -48,8 +48,10 @@ router.post('/register', async (req, res) => {
     res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {
     console.error('❌ 注册错误:', error);
-    console.error('错误堆栈:', error.stack);
-    res.status(500).json({ error: '注册失败', details: error.message });
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('错误堆栈:', errorStack);
+    res.status(500).json({ error: '注册失败', details: errorMessage });
   }
 });
 
@@ -98,8 +100,10 @@ router.post('/login', async (req, res) => {
     res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
   } catch (error) {
     console.error('❌ 登录错误:', error);
-    console.error('错误堆栈:', error.stack);
-    res.status(500).json({ error: '登录失败', details: error.message });
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('错误堆栈:', errorStack);
+    res.status(500).json({ error: '登录失败', details: errorMessage });
   }
 });
 
