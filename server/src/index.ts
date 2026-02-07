@@ -89,11 +89,14 @@ async function startServer() {
       console.warn('⚠️  服务器将继续运行，但数据库功能可能不可用');
     });
     
-    // Redis 是可选的
-    const { initRedis } = await import('./redis.js');
-    initRedis().catch(err => {
-      console.warn('⚠️  Redis 连接失败，系统将在没有缓存的情况下运行');
-    });
+    // Redis 是可选的，如果连接失败就跳过
+    try {
+      const { initRedis } = await import('./redis.js');
+      await initRedis();
+    } catch (err) {
+      console.warn('⚠️  Redis 不可用，系统将在没有缓存的情况下运行');
+      // 不抛出错误，继续运行
+    }
     
   } catch (error) {
     console.error('❌ 服务器启动失败:', error);
