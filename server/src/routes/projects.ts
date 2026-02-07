@@ -74,7 +74,100 @@ router.get('/', async (req: AuthRequest, res) => {
     const organizationId = tenantContext.getOrganizationId();
     const projects = await projectRepo.findByOrganizationId(organizationId);
     
-    res.json(projects);
+    // 为每个项目加载完整的模型数据（modules 和 entities）
+    const projectsWithModel = await Promise.all(
+      projects.map(async (project) => {
+        // 获取项目的所有模块（包括嵌套结构）
+        const modulesResult = await pool.query(`
+          WITH RECURSIVE module_tree AS (
+            SELECT m.*, fp.id as fp_id, fp.name as fp_name, fp.description as fp_description,
+                   fp.entity_usages, fp.involved_attributes, fp.references_data, fp.images
+            FROM modules m
+            LEFT JOIN functional_points fp ON fp.module_id = m.id
+            WHERE m.project_id = $1 AND m.parent_id IS NULL
+            
+            UNION ALL
+            
+            SELECT m.*, fp.id as fp_id, fp.name as fp_name, fp.description as fp_description,
+                   fp.entity_usages, fp.involved_attributes, fp.references_data, fp.images
+            FROM modules m
+            LEFT JOIN functional_points fp ON fp.module_id = m.id
+            INNER JOIN module_tree mt ON m.parent_id = mt.id
+          )
+          SELECT * FROM module_tree
+          ORDER BY sort_order, created_at
+        `, [project.id]);
+        
+        // 获取项目的所有实体
+        const entitiesResult = await pool.query(`
+          SELECT * FROM entities WHERE project_id = $1 ORDER BY created_at
+        `, [project.id]);
+        
+        // 构建模块树结构
+        const moduleMap = new Map();
+        const rootModules: any[] = [];
+        
+        modulesResult.rows.forEach(row => {
+          if (!moduleMap.has(row.id)) {
+            moduleMap.set(row.id, {
+              id: row.id,
+              name: row.name,
+              description: row.description,
+              children: [],
+              points: []
+            });
+          }
+          
+          const module = moduleMap.get(row.id);
+          
+          // 添加功能点
+          if (row.fp_id && !module.points.find((p: any) => p.id === row.fp_id)) {
+            module.points.push({
+              id: row.fp_id,
+              name: row.fp_name,
+              description: row.fp_description,
+              entityUsages: row.entity_usages || [],
+              involvedAttributes: row.involved_attributes || [],
+              referencesData: row.references_data || [],
+              images: row.images || []
+            });
+          }
+        });
+        
+        // 构建父子关系
+        modulesResult.rows.forEach(row => {
+          const module = moduleMap.get(row.id);
+          if (row.parent_id) {
+            const parent = moduleMap.get(row.parent_id);
+            if (parent && !parent.children.find((c: any) => c.id === module.id)) {
+              parent.children.push(module);
+            }
+          } else {
+            if (!rootModules.find(m => m.id === module.id)) {
+              rootModules.push(module);
+            }
+          }
+        });
+        
+        // 构建实体列表
+        const entities = entitiesResult.rows.map(row => ({
+          id: row.id,
+          name: row.name,
+          description: row.description,
+          attributes: row.attributes || {}
+        }));
+        
+        return {
+          ...project,
+          model: {
+            modules: rootModules,
+            entities: entities
+          }
+        };
+      })
+    );
+    
+    res.json(projectsWithModel);
   } catch (error) {
     console.error('获取项目列表失败:', error);
     res.status(500).json({ error: '获取项目列表失败' });
